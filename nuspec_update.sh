@@ -9,8 +9,13 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-INPUT_DIRECTORY=$(basename "$1")
+INPUT_DIRECTORY="$1"
 INPUT_DIRECTORY=${INPUT_DIRECTORY%/}
+
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+
+# Template file absolute path
+TEMPLATE_FILE="$SCRIPT_DIR/template.nuspec"
 
 function read_packages_config_file() {
   if [[ ! -f packages.config ]]; then
@@ -72,13 +77,13 @@ if [[ -d "$INPUT_DIRECTORY" ]]; then
   echo "Reading packages.config..."
   read_packages_config_file
 
-  if [[ ! -f ../template.nuspec ]]; then
+  if [[ ! -f "$TEMPLATE_FILE" ]]; then
     echo "Error: Template template.nuspec not found!"
     exit 1
   fi
 
   echo "updating nuspec template..."
-  cp ../template.nuspec template.nuspec
+  cp "$TEMPLATE_FILE" template.nuspec
   update_template
 
   replace_template_tokens "MyFirstTestProjectNet48" "1.0.0"
