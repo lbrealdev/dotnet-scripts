@@ -9,7 +9,8 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-INPUT_DIRECTORY="$1"
+INPUT_DIRECTORY=$(basename "$1")
+INPUT_DIRECTORY=${INPUT_DIRECTORY%/}
 
 function read_packages_config_file() {
   if [[ ! -f packages.config ]]; then
@@ -42,6 +43,22 @@ function update_template() {
   }1' template.nuspec > temp.nuspec && mv temp.nuspec template.nuspec
 }
 
+function replace_template_tokens() {
+  local id="$1"
+  local version="$2"
+
+  id=$(echo "$id" | sed 's/[&/\]/\\&/g')
+  version=$(echo "$version" | sed 's/[&/\]/\\&/g')
+
+  awk -v id="$id" -v version="$version" '
+    { 
+      gsub("\\$id\\$", id);
+      gsub("\\$version\\$", version);
+      print;
+    }
+  ' template.nuspec > temp.nuspec && mv temp.nuspec template.nuspec
+}
+
 if [[ -d "$INPUT_DIRECTORY" ]]; then
   echo "Fetching packages.config in the $INPUT_DIRECTORY directory..."
 
@@ -63,6 +80,8 @@ if [[ -d "$INPUT_DIRECTORY" ]]; then
   echo "updating nuspec template..."
   cp ../template.nuspec template.nuspec
   update_template
+
+  replace_template_tokens "MyFirstTestProjectNet48" "1.0.0"
 
   echo "Done!"
 else
