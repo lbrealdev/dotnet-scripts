@@ -6,6 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: extractions/setup-just@v2
 
-      - name: Test nuspec.sh
+#      - name: Cleaning .nuspec template file
+#        run: just clean
+
+      - name: Generate .nuspec template file
         uses: ./
+        with:
+          packages-directory: 'MyFirstTestProjectNet48'

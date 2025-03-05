@@ -1,15 +1,14 @@
 name: 'Generate .nuspec file'
 description: 'GitHub action to generate a .nuspec file.'
 inputs:
-  packages-file:
-    description: 'The packages.config file path.'
+  packages-directory:
+    description: 'The directory of project where contain the packages.config file.'
     required: false
-    default: 'template.nuspec'
 
 runs:
   using: "composite"
   steps:
-    - name: Run nuspec.sh
+    - name: Update .nuspec template file
       run: |
-        ./nuspec-format.sh ${{ inputs.packages-file }}
+        ./nuspec_update.sh ${{ inputs.packages-directory }}
       shell: bash
