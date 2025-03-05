@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -euo pipefail
+#set -euo pipefail
+
+#set -x
 
 if [ "$#" -lt 1 ]; then
   echo "Usage: ./$(basename "$0") <directory>"
@@ -10,7 +12,23 @@ fi
 INPUT_DIRECTORY="$1"
 
 function read_packages_config_file() {
+  if [[ ! -f packages.config ]]; then
+    echo "Error: packages.config file not found in $INPUT_DIRECTORY!"
+    exit 1
+  fi
+
+  if [[ ! -s packages.config ]]; then
+    echo "Warning: packages.config is empty. No dependencies to process."
+    exit 0
+  fi
+
   grep -Eo '<package id="[^"]+" version="[^"]+"' packages.config | sed -E 's/<package id="([^"]+)" version="([^"]+)"/\1\t\2/' > packages_list.txt
+
+  if [[ ! -s packages_list.txt ]]; then
+    echo "Warning: No dependencies found in packages.config. Skipping update."
+    rm -f packages_list.txt
+    exit 0
+  fi
 }
 
 function update_template() {
@@ -27,26 +45,27 @@ function update_template() {
 if [[ -d "$INPUT_DIRECTORY" ]]; then
   echo "Fetching packages.config in the $INPUT_DIRECTORY directory..."
 
-  cd "$INPUT_DIRECTORY" || exit
+  cd "$INPUT_DIRECTORY" || exit 1
 
-  if [[ ! -f packages.config ]]; then
-    echo "The packages.config file was not found!"
-  fi
-
-  if [[ -f packages_list.txt ]] || [[ -f template.nuspec ]]; then
-    echo "Deleting old files..."
-    rm -rf packages_list.txt template.nuspec
+  if [[ -f packages_list.txt ]]; then
+    echo "Removing old packages_list.txt..."
+    rm -f packages_list.txt
   fi
 
   echo "Reading packages.config..."
   read_packages_config_file
 
-  echo "Adding dependencies in nuspec template..."
-  cp ../template.nuspec .
+  if [[ ! -f ../template.nuspec ]]; then
+    echo "Error: Template template.nuspec not found!"
+    exit 1
+  fi
+
+  echo "updating nuspec template..."
+  cp ../template.nuspec template.nuspec
   update_template
 
   echo "Done!"
-  exit 0
 else
-  echo "The $INPUT_DIRECTORY directory was not found!"
+  echo "Error: Directory $INPUT_DIRECTORY not found!"
+  exit 1
 fi
