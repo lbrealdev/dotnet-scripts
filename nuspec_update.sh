@@ -9,7 +9,7 @@ if [ "$#" -lt 1 ]; then
   exit 1
 fi
 
-INPUT_DIRECTORY=$(basename "$1")
+INPUT_DIRECTORY="$1"
 INPUT_DIRECTORY=${INPUT_DIRECTORY%/}
 
 function read_packages_config_file() {
