@@ -1,0 +1,14 @@
+name: 'Generate .nuspec file'
+description: 'GitHub action to generate a .nuspec file.'
+inputs:
+  packages-directory:
+    description: 'The directory of project where contain the packages.config file.'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update .nuspec template file
+      run: |
+        ./nuspec_update.sh ${{ inputs.packages-directory }}
+      shell: bash
