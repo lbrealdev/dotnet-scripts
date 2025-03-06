@@ -10,31 +10,35 @@ if [ "$#" -lt 1 ]; then
 fi
 
 INPUT_DIRECTORY="$1"
-INPUT_DIRECTORY=${INPUT_DIRECTORY%/}
-
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
-
-# Template file absolute path
 TEMPLATE_FILE="$SCRIPT_DIR/template.nuspec"
+
+if [[ ! -f "$TEMPLATE_FILE" ]]; then
+  echo "Error: Template template.nuspec not found!"
+  exit 1
+fi
+
+echo "Template found at: $TEMPLATE_FILE"
+echo ""
 
 function read_packages_config_file() {
   if [[ ! -f packages.config ]]; then
-    echo "Error: packages.config file not found in $INPUT_DIRECTORY!"
-    exit 1
+    echo "Warning: packages.config not found. Continuing without dependencies."
+    return
   fi
 
   if [[ ! -s packages.config ]]; then
     echo "Warning: packages.config is empty. No dependencies to process."
-    exit 0
+    return
   fi
 
   grep -Eo '<package id="[^"]+" version="[^"]+"' packages.config | sed -E 's/<package id="([^"]+)" version="([^"]+)"/\1\t\2/' > packages_list.txt
 
-  if [[ ! -s packages_list.txt ]]; then
-    echo "Warning: No dependencies found in packages.config. Skipping update."
-    rm -f packages_list.txt
-    exit 0
-  fi
+  # if [[ ! -s packages_list.txt ]]; then
+  #   echo "Warning: No dependencies found in packages.config. Skipping update."
+  #   rm -f packages_list.txt
+  #   exit 0
+  # fi
 }
 
 function update_template() {
@@ -66,29 +70,25 @@ function replace_template_tokens() {
 
 if [[ -d "$INPUT_DIRECTORY" ]]; then
   echo "Fetching packages.config in the $INPUT_DIRECTORY directory..."
-
   cd "$INPUT_DIRECTORY" || exit 1
 
-  if [[ -f packages_list.txt ]]; then
-    echo "Removing old packages_list.txt..."
-    rm -f packages_list.txt
-  fi
+
+  rm -f packages_list.txt template.nuspec
 
   echo "Reading packages.config..."
   read_packages_config_file
 
-  if [[ ! -f "$TEMPLATE_FILE" ]]; then
-    echo "Error: Template template.nuspec not found!"
-    exit 1
-  fi
-
-  echo "updating nuspec template..."
-  cp "$TEMPLATE_FILE" template.nuspec
+  echo "Copying template.nuspec..."
+  cp "$TEMPLATE_FILE" .
+  
+  echo "Updating nuspec dependencies..."
   update_template
 
+  echo "Replacing template tokens..."
   replace_template_tokens "MyFirstTestProjectNet48" "1.0.0"
 
   echo "Done!"
+  exit 0
 else
   echo "Error: Directory $INPUT_DIRECTORY not found!"
   exit 1
